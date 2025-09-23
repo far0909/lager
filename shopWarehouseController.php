@@ -186,19 +186,43 @@ class shopWarehouseController Extends baseController
             $shopID = $_POST['shop_id'];
             $expireDateId = isset($_POST['expire_date_id']) ? $_POST['expire_date_id'] : null;
 
-            // Use original logic for normal shops, extend for cardshops
-            $options = array('shop_id' => $shopID);
-            if ($expireDateId) {
-                $options['expire_date_id'] = $expireDateId;
+            // Check if this is a cardshop
+            $cardshopCheckSql = "SELECT shop_id FROM cardshop_settings WHERE shop_id = ".$shopID;
+            $isCardshop = Dbsqli::getSql($cardshopCheckSql);
+
+            if ($isCardshop) {
+                // For cardshops - ensure all delivery date records exist
+                $deliveryDatesSql = "SELECT ed.id FROM cardshop_expiredate ce JOIN expire_date ed ON ce.expire_date_id = ed.id WHERE ce.shop_id = ".$shopID;
+                $deliveryDates = Dbsqli::getSql($deliveryDatesSql);
+
+                if ($deliveryDates) {
+                    foreach ($deliveryDates as $date) {
+                        $checkSql = "SELECT id FROM warehouse_settings WHERE shop_id = ".$shopID." AND expire_date_id = ".$date['id'];
+                        $existingRecord = Dbsqli::getSql($checkSql);
+                        if (!$existingRecord || count($existingRecord) == 0) {
+                            $insertSql = "INSERT INTO warehouse_settings (shop_id,expire_date_id,token) values (".$shopID.",".$date['id'].",'".generateTokenWithTime()."')";
+                            Dbsqli::setSql2($insertSql);
+                        }
+                    }
+                }
+
+                // Now get the requested record
+                if ($expireDateId) {
+                    $options = array('shop_id' => $shopID, 'expire_date_id' => $expireDateId);
+                } else {
+                    // If no expire_date_id specified for cardshop, return empty
+                    response::success(json_encode([]));
+                    return;
+                }
+            } else {
+                // For normal shops - original logic
+                $options = array('shop_id' => $shopID);
             }
 
             $settings = WarehouseSettings::find('all', $options);
-            if(!$settings){
-                if ($expireDateId) {
-                    $sql = "INSERT INTO warehouse_settings (shop_id,expire_date_id,token) values (".$shopID.",".$expireDateId.",'".generateTokenWithTime()."')";
-                } else {
-                    $sql = "INSERT INTO warehouse_settings (shop_id,token) values (".$shopID.",'".generateTokenWithTime()."')";
-                }
+            if(!$settings && !$isCardshop){
+                // Only create record for normal shops if not exists
+                $sql = "INSERT INTO warehouse_settings (shop_id,token) values (".$shopID.",'".generateTokenWithTime()."')";
                 $res = Dbsqli::setSql2($sql);
                 $settings = WarehouseSettings::find('all', $options);
             }
@@ -375,7 +399,7 @@ class shopWarehouseController Extends baseController
             $sql = "SELECT shop_id FROM cardshop_settings WHERE shop_id = ".$shopID;
             $cardshopCheck = Dbsqli::getSql($sql);
 
-            if(!$cardshopCheck){
+            if(!$cardshopCheck || empty($cardshopCheck)){
                 response::success(json_encode(['is_cardshop' => false, 'delivery_dates' => []]));
                 return;
             }
