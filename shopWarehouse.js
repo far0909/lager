@@ -1,7 +1,7 @@
 var BASE_AJAX_URL = "https://system.gavefabrikken.dk/gavefabrikken_backend/index.php?rt=";
 
-// VERSION: 2025-09-23-15:47:00
-console.log('ShopWarehouse.js loaded - VERSION: 2025-09-23-15:47:00');
+// VERSION: 2025-09-23-16:10:00
+console.log('ShopWarehouse.js loaded - VERSION: 2025-09-23-16:10:00');
 
 
 function ShopWarehouse(shopID, expireDateId = null) {
@@ -55,13 +55,15 @@ function ShopWarehouse(shopID, expireDateId = null) {
                 console.log('Dropdown built, selected expireDateId:', this.expireDateId);
                 return true; // Initialize warehouse with selected date
             } else {
-                // Regular shop - hide dropdown
+                // Regular shop - hide dropdown and initialize normally
+                console.log('This is a regular shop, hiding dropdown');
                 $("#delivery-date-selector").hide().addClass('d-none');
                 return true; // Initialize warehouse
             }
         } catch(error) {
             // If AJAX fails, treat as regular shop
-            $("#delivery-date-selector").addClass('d-none');
+            console.log('AJAX failed, treating as regular shop:', error);
+            $("#delivery-date-selector").hide().addClass('d-none');
             return true; // Initialize warehouse
         }
     };

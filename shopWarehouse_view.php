@@ -53,7 +53,7 @@
     <div class="d-flex gap-2">
         <div class="dropdown">
             <button class="btn btn-info dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                V�lg Warehouse
+                Vælg Warehouse
             </button>
             <ul class="dropdown-menu">
                 <li><a class="dropdown-item" href="#" data-warehouse="MjJiMzE4MmZkNGI1MWZkYjUxZTYzZDhiZDdmZDZhOGMxNjk4Nj">Bech Distribution A/S (BECH)</a></li>
@@ -62,11 +62,11 @@
                 <li><a class="dropdown-item" href="#" data-warehouse="f68a2f8fa001a7d8227c0475371ce6ab5d5a622605">Distribution Plus (DP-PAK)</a></li>
                 <li><a class="dropdown-item" href="#" data-warehouse="75d3fc49f519a11c3ced357ae96da4b706e8a9fe4e">DSV (DSV KORT)</a></li>
                 <li><a class="dropdown-item" href="#" data-warehouse="ZTBmMzUzMzY1OTI0MmQxYmE0MTY4MGE2NzE2MDdkMTYxNjk4Nj">DSV (DSV-PAK)</a></li>
-                <li><a class="dropdown-item" href="#" data-warehouse="e889588fe7864a11407f270c1c9df52f8c5ef50314">Godshotellet Sj�lland (GODS-H)</a></li>
+                <li><a class="dropdown-item" href="#" data-warehouse="e889588fe7864a11407f270c1c9df52f8c5ef50314">Godshotellet Sjælland (GODS-H)</a></li>
                 <li><a class="dropdown-item" href="#" data-warehouse="80bd0c005fc994296818b8dc10ba3504cedf7df4dd">Hedehusene Lagersalg (H - LAGERS)</a></li>
                 <li><a class="dropdown-item" href="#" data-warehouse="2615ccf25e8f7ab92a1e04f67fb94711ab90d06a37b">Hede2 (HEDE)</a></li>
-                <li><a class="dropdown-item" href="#" data-warehouse="e93295a7dff57e57c5098d500897bce9eecd60634a">Lindstr�m Lager (LIND-KORT)</a></li>
-                <li><a class="dropdown-item" href="#" data-warehouse="ccbcec2966716815a95608102cef29f188716db00d">Lindstr�m Lager (LIND-PAK)</a></li>
+                <li><a class="dropdown-item" href="#" data-warehouse="e93295a7dff57e57c5098d500897bce9eecd60634a">Lindström Lager (LIND-KORT)</a></li>
+                <li><a class="dropdown-item" href="#" data-warehouse="ccbcec2966716815a95608102cef29f188716db00d">Lindström Lager (LIND-PAK)</a></li>
                 <li><a class="dropdown-item" href="#" data-warehouse="30ea9c88920e0ce0f4c801ebed9ea1a67e3675eb31">Skanlog A/S (SKANLOG-GL)</a></li>
                 <li><a class="dropdown-item" href="#" data-warehouse="e1e9764d283d43aeafe70bbb04ba120b0e2928ed0c">Skanlog A/S (SKANLOG-IS)</a></li>
                 <li><a class="dropdown-item" href="#" data-warehouse="47c29c9659f61c6553fd59c916f0687f6ee1f1d9ad">GaveFabrikkens lager (HEDEHUSENE)</a></li>
@@ -121,7 +121,7 @@
                             <span class="fw-bold">Filer/status</span>
                             <div>
                                 <span class="badge bg-warning me-2">Afventer</span>
-                                <span class="text-muted">Ikke udf�rt endnu</span>
+                                <span class="text-muted">Ikke udført endnu</span>
                             </div>
                         </div>
                     </div>
@@ -130,7 +130,7 @@
                             <span class="fw-bold">Leveringsinfo</span>
                             <div>
                                 <span class="badge bg-warning me-2">Afventer</span>
-                                <span class="text-muted">Ikke udf�rt endnu</span>
+                                <span class="text-muted">Ikke udført endnu</span>
                             </div>
                         </div>
                     </div>
@@ -139,7 +139,7 @@
                             <span class="fw-bold">Download</span>
                             <div>
                                 <span class="badge bg-warning me-2">Afventer</span>
-                                <span class="text-muted">Ikke udf�rt endnu</span>
+                                <span class="text-muted">Ikke udført endnu</span>
                             </div>
                         </div>
                     </div>
@@ -148,7 +148,7 @@
                             <span class="fw-bold">Opdatere status</span>
                             <div>
                                 <span class="badge bg-warning me-2">Afventer</span>
-                                <span class="text-muted">Ikke udf�rt endnu</span>
+                                <span class="text-muted">Ikke udført endnu</span>
                             </div>
                         </div>
                     </div>
@@ -174,7 +174,7 @@
                     </div>
                     <div class="p-3 border-bottom">
                         <div class="d-flex justify-content-between align-items-center" id="guide-check-status">
-                            <span class="fw-bold">Pakkevejledning l�st/fulgt</span>
+                            <span class="fw-bold">Pakkevejledning læst/fulgt</span>
                             <div>
                                 <span class="badge bg-warning me-2">Afventer</span>
                                 <span class="text-muted">Ikke godkendt endnu</span>
@@ -313,7 +313,7 @@
                     .removeClass('bg-success')
                     .addClass('bg-warning')
                     .text('Afventer');
-                $container.find('.text-muted').text('Ikke udf�rt endnu');
+                $container.find('.text-muted').text('Ikke udført endnu');
             }
         }
 
