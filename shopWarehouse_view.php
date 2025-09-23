@@ -85,18 +85,16 @@
 
 <div class="container mt-4">
     <div class="row mb-3">
-        <div class="col">
-            <button id="showModalInfoBtn" class="btn btn-info">LeveringsInfo</button>
-        </div>
-        <div class="col text-center">
-            <div id="delivery-date-selector" style="display: none;">
-                <label for="delivery-date-dropdown" class="form-label">Leveringsdato:</label>
-                <select id="delivery-date-dropdown" class="form-select d-inline-block" style="width: auto;">
+        <div class="col-md-6">
+            <div id="delivery-date-selector" class="d-none" style="background-color: #f8f9fa; padding: 15px; border-radius: 8px;">
+                <label for="delivery-date-dropdown" class="form-label fw-bold">Vælg Leveringsdato:</label>
+                <select id="delivery-date-dropdown" class="form-select mt-2" style="width: 250px;">
                     <option value="">Vælg leveringsdato</option>
                 </select>
             </div>
         </div>
-        <div class="col text-end">
+        <div class="col-md-6 text-end">
+            <button id="showModalInfoBtn" class="btn btn-info me-2">LeveringsInfo</button>
             <button id="showModalBtn" class="btn btn-primary">Upload File</button>
         </div>
     </div>
@@ -389,57 +387,24 @@
         // Definer BASE_AJAX_URL hvis den ikke allerede er defineret
         const BASE_AJAX_URL = 'https://system.gavefabrikken.dk/gavefabrikken_backend/index.php?rt=';
 
-        // Check if this is a cardshop and load delivery dates
-        $.post(BASE_AJAX_URL + "shopWarehouse/getDeliveryDates", {shop_id: shopId}, function(response, textStatus) {
-            if(response.is_cardshop && response.delivery_dates.length > 0) {
-                // Show delivery date selector
-                $("#delivery-date-selector").show();
+        // Initialize ShopWarehouse with cardshop detection
+        sw = new ShopWarehouse(shopId, currentExpireDateId);
 
-                // Populate dropdown
-                let dropdown = $("#delivery-date-dropdown");
-                response.delivery_dates.forEach(function(date) {
-                    dropdown.append(`<option value="${date.id}">${date.display_date}</option>`);
-                });
+        // Check if cardshop and initialize accordingly
+        sw.checkAndInitializeCardshop().then(function(shouldInitialize) {
+            if(shouldInitialize) {
+                sw.init();
+                statusHandler = new StatusHandler(shopId, currentExpireDateId);
 
-                // Set current selection if available
-                if(currentExpireDateId) {
-                    dropdown.val(currentExpireDateId);
-                    // Initialize warehouse for selected delivery date
-                    initializeWarehouse();
-                } else {
-                    // For cardshops without selected delivery date, don't initialize
-                    console.log("Cardshop detected - please select a delivery date");
-                }
-
-                // Handle dropdown change
-                dropdown.change(function() {
+                // Handle dropdown change for cardshops
+                $("#delivery-date-dropdown").change(function() {
                     const selectedExpireDateId = $(this).val();
                     if(selectedExpireDateId) {
-                        // Reload page with selected expire_date_id
                         window.location.href = `?shopID=${shopId}&expireDateId=${selectedExpireDateId}`;
-                    } else {
-                        // Reload page without expire_date_id
-                        window.location.href = `?shopID=${shopId}`;
                     }
                 });
-            } else {
-                // Regular shop - initialize normally
-                initializeWarehouse();
             }
-        }, "json").fail(function() {
-            // If AJAX fails, initialize as regular shop
-            console.log("Failed to check cardshop status, initializing as regular shop");
-            initializeWarehouse();
         });
-
-        function initializeWarehouse() {
-            // Initialiser ShopWarehouse
-            sw = new ShopWarehouse(shopId, currentExpireDateId);
-            sw.init();
-
-            // Initialiser StatusHandler
-            statusHandler = new StatusHandler(shopId, currentExpireDateId);
-        }
 
         // Modal handlers
         $("#showModalBtn").click(function() {
