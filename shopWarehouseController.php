@@ -69,16 +69,13 @@ class shopWarehouseController Extends baseController
             $expireDateId = isset($_POST['expire_date_id']) ? $_POST['expire_date_id'] : null;
             $packaging_status = $_POST['packaging_status'];
 
+            // Use original simple logic - let ActiveRecord handle it
+            $options = array('shop_id' => $shopID);
             if ($expireDateId) {
-                $options = array('shop_id' => $shopID, 'expire_date_id' => $expireDateId);
-                $settings = WarehouseSettings::find('all', $options);
-            } else {
-                // For regular shops, find existing settings where expire_date_id is NULL
-                $sql = "SELECT * FROM warehouse_settings WHERE shop_id = " . $shopID . " AND (expire_date_id IS NULL OR expire_date_id = 0) LIMIT 1";
-                $settingsArray = Dbsqli::getSql($sql);
-                $settings = $settingsArray && count($settingsArray) > 0 ? $settingsArray : [];
+                $options['expire_date_id'] = $expireDateId;
             }
 
+            $settings = WarehouseSettings::find('all', $options);
             if (sizeof($settings) == 0) {
                 $token = generateTokenWithTime();
                 $postData = [
@@ -90,11 +87,7 @@ class shopWarehouseController Extends baseController
                 ];
                 $res = WarehouseSettings::createFiles($postData);
             } else {
-                if ($expireDateId) {
-                    $id = $settings[0]->id;
-                } else {
-                    $id = $settings[0]['id'];
-                }
+                $id = $settings[0]->id;
                 $data = [
                     "id"=>$id,
                     "packaging_status" => $packaging_status
@@ -113,11 +106,10 @@ class shopWarehouseController Extends baseController
             $shopID = $_POST['shop_id'];
             $expireDateId = isset($_POST['expire_date_id']) ? $_POST['expire_date_id'] : null;
 
+            // Use original simple logic - let ActiveRecord handle it
             $options = array('shop_id' => $shopID);
             if ($expireDateId) {
                 $options['expire_date_id'] = $expireDateId;
-            } else {
-                $options['expire_date_id'] = null;
             }
 
             $settings = WarehouseSettings::find('all', $options);
@@ -150,11 +142,10 @@ class shopWarehouseController Extends baseController
             $shopID = $_POST['shop_id'];
             $expireDateId = isset($_POST['expire_date_id']) ? $_POST['expire_date_id'] : null;
 
+            // Use original simple logic - let ActiveRecord handle it
             $options = array('shop_id' => $shopID);
             if ($expireDateId) {
                 $options['expire_date_id'] = $expireDateId;
-            } else {
-                $options['expire_date_id'] = null;
             }
 
             $settings = WarehouseSettings::find('all', $options);
