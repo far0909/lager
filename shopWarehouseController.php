@@ -67,19 +67,20 @@ class shopWarehouseController Extends baseController
         if (isset($_POST['shop_id'])) {
             $shopID = $_POST['shop_id'];
             $expireDateId = isset($_POST['expire_date_id']) ? $_POST['expire_date_id'] : null;
+            $packaging_status = $_POST['packaging_status'];
 
-            $options = array('shop_id' => $shopID);
             if ($expireDateId) {
-                $options['expire_date_id'] = $expireDateId;
+                $options = array('shop_id' => $shopID, 'expire_date_id' => $expireDateId);
+                $settings = WarehouseSettings::find('all', $options);
             } else {
-                $options['expire_date_id'] = null;
+                // For regular shops, find existing settings where expire_date_id is NULL
+                $sql = "SELECT * FROM warehouse_settings WHERE shop_id = " . $shopID . " AND (expire_date_id IS NULL OR expire_date_id = 0) LIMIT 1";
+                $settingsArray = Dbsqli::getSql($sql);
+                $settings = $settingsArray && count($settingsArray) > 0 ? $settingsArray : [];
             }
 
-            $settings = WarehouseSettings::find('all', $options);
-            $packaging_status = $_POST['packaging_status'];
             if (sizeof($settings) == 0) {
                 $token = generateTokenWithTime();
-
                 $postData = [
                     "packaging_status" => $packaging_status,
                     "token" => $token,
@@ -89,7 +90,11 @@ class shopWarehouseController Extends baseController
                 ];
                 $res = WarehouseSettings::createFiles($postData);
             } else {
-                $id = $settings[0]->id;
+                if ($expireDateId) {
+                    $id = $settings[0]->id;
+                } else {
+                    $id = $settings[0]['id'];
+                }
                 $data = [
                     "id"=>$id,
                     "packaging_status" => $packaging_status
@@ -181,20 +186,29 @@ class shopWarehouseController Extends baseController
             $shopID = $_POST['shop_id'];
             $expireDateId = isset($_POST['expire_date_id']) ? $_POST['expire_date_id'] : null;
 
-            $options = array('shop_id' => $shopID);
             if ($expireDateId) {
-                $options['expire_date_id'] = $expireDateId;
-            } else {
-                $options['expire_date_id'] = null;
-            }
-
-            $settings = WarehouseSettings::find('all', $options);
-            if(!$settings){
-                    $expireDateIdValue = $expireDateId ? $expireDateId : 'NULL';
-                    $sql = "INSERT INTO warehouse_settings (shop_id,expire_date_id,token) values (".$shopID.",".$expireDateIdValue.",'".generateTokenWithTime()."')";
+                $options = array('shop_id' => $shopID, 'expire_date_id' => $expireDateId);
+                $settings = WarehouseSettings::find('all', $options);
+                if(!$settings){
+                    $sql = "INSERT INTO warehouse_settings (shop_id,expire_date_id,token) values (".$shopID.",".$expireDateId.",'".generateTokenWithTime()."')";
                     $res = Dbsqli::setSql2($sql);
                     $settings = WarehouseSettings::find('all', $options);
                 }
+            } else {
+                // For regular shops, get settings where expire_date_id is NULL or not set
+                $sql = "SELECT * FROM warehouse_settings WHERE shop_id = " . $shopID . " AND (expire_date_id IS NULL) LIMIT 1";
+                $settingsResult = Dbsqli::getSql($sql);
+                if(!$settingsResult || count($settingsResult) == 0){
+                    $sql = "INSERT INTO warehouse_settings (shop_id,expire_date_id,token) values (".$shopID.",NULL,'".generateTokenWithTime()."')";
+                    $res = Dbsqli::setSql2($sql);
+                    $sql = "SELECT * FROM warehouse_settings WHERE shop_id = " . $shopID . " AND (expire_date_id IS NULL) LIMIT 1";
+                    $settingsResult = Dbsqli::getSql($sql);
+                }
+                // Format response to match expected structure
+                response::success(json_encode(['data' => $settingsResult]));
+                return;
+            }
+
             response::success(json_encode($settings));
         }
     }
@@ -353,7 +367,11 @@ class shopWarehouseController Extends baseController
         if ($expireDateId) {
             $options['expire_date_id'] = $expireDateId;
         } else {
-            $options['expire_date_id'] = null;
+            // For regular shops, get files where expire_date_id is NULL or not set
+            $sql = "SELECT * FROM warehouse_files WHERE shop_id = " . $shopID . " AND active = 1 AND (expire_date_id IS NULL OR expire_date_id = 0)";
+            $WarehouseFiles = Dbsqli::getSql($sql);
+            response::success(json_encode(['data' => $WarehouseFiles]));
+            return;
         }
 
         $WarehouseFiles = WarehouseFiles::find('all', $options);
