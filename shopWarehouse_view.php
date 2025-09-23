@@ -238,8 +238,9 @@
 
 <script>
     class StatusHandler {
-        constructor(shopId) {
+        constructor(shopId, expireDateId = null) {
             this.shopId = shopId;
+            this.expireDateId = expireDateId;
             this.init();
         }
 
@@ -250,8 +251,17 @@
 
         fetchStatus() {
             let self = this;
-            $.post(BASE_AJAX_URL + "shopWarehouse/readStatus", {shop_id: this.shopId}, function(response, textStatus) {
-                self.updateStatus(response.data[0].attributes);
+            let postData = {shop_id: this.shopId};
+            if(this.expireDateId) {
+                postData.expire_date_id = this.expireDateId;
+            }
+
+            $.post(BASE_AJAX_URL + "shopWarehouse/readStatus", postData, function(response, textStatus) {
+                if(response.data && response.data.length > 0) {
+                    // Handle both object and array responses
+                    let statusData = response.data[0].attributes || response.data[0];
+                    self.updateStatus(statusData);
+                }
             }, "json")
                 .fail(function() {
                     alert("Der opstod en fejl ved hentning af status.");
@@ -420,7 +430,7 @@
             sw.init();
 
             // Initialiser StatusHandler
-            statusHandler = new StatusHandler(shopId);
+            statusHandler = new StatusHandler(shopId, currentExpireDateId);
         }
 
         // Modal handlers
