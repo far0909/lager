@@ -188,20 +188,26 @@ class shopWarehouseController Extends baseController
 
             // Check if this is a cardshop
             $cardshopCheckSql = "SELECT shop_id FROM cardshop_settings WHERE shop_id = ".$shopID;
-            $isCardshop = Dbsqli::getSql($cardshopCheckSql);
+            $cardshopCheckResult = Dbsqli::setSql2($cardshopCheckSql);
+            $isCardshop = $cardshopCheckResult && $cardshopCheckResult->num_rows > 0;
 
             if ($isCardshop) {
                 // For cardshops - ensure all delivery date records exist
-                $deliveryDatesSql = "SELECT ed.id FROM cardshop_expiredate ce JOIN expire_date ed ON ce.expire_date_id = ed.id WHERE ce.shop_id = ".$shopID;
-                $deliveryDates = Dbsqli::getSql($deliveryDatesSql);
+                $sql = "SELECT * FROM cardshop_expiredate WHERE shop_id = ".$shopID;
+                $cardshopExpireDatesResult = Dbsqli::setSql2($sql);
 
-                if ($deliveryDates) {
-                    foreach ($deliveryDates as $date) {
-                        $checkSql = "SELECT id FROM warehouse_settings WHERE shop_id = ".$shopID." AND expire_date_id = ".$date['id'];
-                        $existingRecord = Dbsqli::getSql($checkSql);
-                        if (!$existingRecord || count($existingRecord) == 0) {
-                            $insertSql = "INSERT INTO warehouse_settings (shop_id,expire_date_id,token) values (".$shopID.",".$date['id'].",'".generateTokenWithTime()."')";
-                            Dbsqli::setSql2($insertSql);
+                if($cardshopExpireDatesResult && $cardshopExpireDatesResult->num_rows > 0) {
+                    while($cardshopDate = $cardshopExpireDatesResult->fetch_assoc()) {
+                        $expireDateSql = "SELECT * FROM expire_date WHERE id = ".$cardshopDate['expire_date_id']." AND is_delivery != 1";
+                        $expireDateResult = Dbsqli::setSql2($expireDateSql);
+                        if($expireDateResult && $expireDateResult->num_rows > 0) {
+                            // Check if record exists
+                            $checkSql = "SELECT id FROM warehouse_settings WHERE shop_id = ".$shopID." AND expire_date_id = ".$cardshopDate['expire_date_id'];
+                            $existingResult = Dbsqli::setSql2($checkSql);
+                            if (!$existingResult || $existingResult->num_rows == 0) {
+                                $insertSql = "INSERT INTO warehouse_settings (shop_id,expire_date_id,token) values (".$shopID.",".$cardshopDate['expire_date_id'].",'".generateTokenWithTime()."')";
+                                Dbsqli::setSql2($insertSql);
+                            }
                         }
                     }
                 }
@@ -397,20 +403,28 @@ class shopWarehouseController Extends baseController
 
             // Check if shop is a cardshop
             $sql = "SELECT shop_id FROM cardshop_settings WHERE shop_id = ".$shopID;
-            $cardshopCheck = Dbsqli::getSql($sql);
+            $cardshopCheck = Dbsqli::setSql2($sql);
 
-            if(!$cardshopCheck || empty($cardshopCheck)){
+            if(!$cardshopCheck || $cardshopCheck->num_rows == 0){
                 response::success(json_encode(['is_cardshop' => false, 'delivery_dates' => []]));
                 return;
             }
 
             // Get delivery dates for cardshop
-            $sql = "SELECT ed.id, ed.display_date, ed.expire_date
-                    FROM cardshop_expiredate ce
-                    JOIN expire_date ed ON ce.expire_date_id = ed.id
-                    WHERE ce.shop_id = ".$shopID."
-                    ORDER BY ed.expire_date ASC";
-            $deliveryDates = Dbsqli::getSql($sql);
+            $sql = "SELECT * FROM cardshop_expiredate WHERE shop_id = ".$shopID;
+            $cardshopExpireDatesResult = Dbsqli::setSql2($sql);
+
+            $deliveryDates = [];
+            if($cardshopExpireDatesResult && $cardshopExpireDatesResult->num_rows > 0) {
+                while($cardshopDate = $cardshopExpireDatesResult->fetch_assoc()) {
+                    $expireDateSql = "SELECT * FROM expire_date WHERE id = ".$cardshopDate['expire_date_id']." AND is_delivery != 1";
+                    $expireDateResult = Dbsqli::setSql2($expireDateSql);
+                    if($expireDateResult && $expireDateResult->num_rows > 0) {
+                        $expireDate = $expireDateResult->fetch_assoc();
+                        $deliveryDates[] = $expireDate;
+                    }
+                }
+            }
 
             response::success(json_encode(['is_cardshop' => true, 'delivery_dates' => $deliveryDates]));
         }

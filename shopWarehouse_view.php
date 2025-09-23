@@ -406,6 +406,9 @@
                     dropdown.val(currentExpireDateId);
                     // Initialize warehouse for selected delivery date
                     initializeWarehouse();
+                } else {
+                    // For cardshops without selected delivery date, don't initialize
+                    console.log("Cardshop detected - please select a delivery date");
                 }
 
                 // Handle dropdown change
