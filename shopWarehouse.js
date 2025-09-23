@@ -1,5 +1,8 @@
 var BASE_AJAX_URL = "https://system.gavefabrikken.dk/gavefabrikken_backend/index.php?rt=";
 
+// VERSION: 2025-09-23-15:47:00
+console.log('ShopWarehouse.js loaded - VERSION: 2025-09-23-15:47:00');
+
 
 function ShopWarehouse(shopID, expireDateId = null) {
     if (typeof shopID !== 'number') {
@@ -15,34 +18,45 @@ function ShopWarehouse(shopID, expireDateId = null) {
 
     this.checkAndInitializeCardshop = async function() {
         try {
-            const deliveryDatesResponse = await $.post(BASE_AJAX_URL + "shopWarehouse/getDeliveryDates", {shop_id: this.shopID});
+            console.log('Checking cardshop for shopID:', this.shopID);
+            const response = await $.post(BASE_AJAX_URL + "shopWarehouse/getDeliveryDates", {shop_id: this.shopID});
 
-            if(deliveryDatesResponse.is_cardshop && deliveryDatesResponse.delivery_dates.length > 0) {
-                // Show delivery date selector
-                $("#delivery-date-selector").removeClass('d-none');
+            // Parse JSON response
+            let parsedResponse = JSON.parse(response);
+            let deliveryDatesResponse = parsedResponse.data;
 
-                // Populate dropdown
-                let dropdown = $("#delivery-date-dropdown");
-                dropdown.empty().append('<option value="">Vælg leveringsdato</option>');
+            console.log('Parsed response:', parsedResponse);
+            console.log('Delivery data:', deliveryDatesResponse);
 
+            if(deliveryDatesResponse && deliveryDatesResponse.is_cardshop && deliveryDatesResponse.delivery_dates.length > 0) {
+                console.log('Building dropdown for cardshop');
+
+                // Force show dropdown
+                $("#delivery-date-selector").show().removeClass('d-none');
+
+                // Build dropdown HTML
+                let dropdownHtml = '';
                 deliveryDatesResponse.delivery_dates.forEach(function(date) {
                     let weekText = date.week_no ? ` (Uge ${date.week_no})` : '';
-                    dropdown.append(`<option value="${date.id}">${date.display_date}${weekText}</option>`);
+                    dropdownHtml += `<option value="${date.id}">${date.display_date}${weekText}</option>`;
                 });
 
-                // Set current selection or redirect to first
-                if(this.expireDateId) {
-                    dropdown.val(this.expireDateId);
-                    return true; // Initialize warehouse
-                } else {
-                    // Auto-select first delivery date and redirect
-                    const firstDeliveryDateId = deliveryDatesResponse.delivery_dates[0].id;
-                    window.location.href = `?shopID=${this.shopID}&expireDateId=${firstDeliveryDateId}`;
-                    return false; // Don't initialize
+                // Set dropdown content
+                $("#delivery-date-dropdown").html(dropdownHtml);
+
+                // Auto-select first date if none selected
+                if(!this.expireDateId) {
+                    this.expireDateId = deliveryDatesResponse.delivery_dates[0].id;
                 }
+
+                // Set selected value
+                $("#delivery-date-dropdown").val(this.expireDateId);
+
+                console.log('Dropdown built, selected expireDateId:', this.expireDateId);
+                return true; // Initialize warehouse with selected date
             } else {
-                // Regular shop
-                $("#delivery-date-selector").addClass('d-none');
+                // Regular shop - hide dropdown
+                $("#delivery-date-selector").hide().addClass('d-none');
                 return true; // Initialize warehouse
             }
         } catch(error) {
