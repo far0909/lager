@@ -53,7 +53,7 @@
     <div class="d-flex gap-2">
         <div class="dropdown">
             <button class="btn btn-info dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                Vælg Warehouse
+                Vï¿½lg Warehouse
             </button>
             <ul class="dropdown-menu">
                 <li><a class="dropdown-item" href="#" data-warehouse="MjJiMzE4MmZkNGI1MWZkYjUxZTYzZDhiZDdmZDZhOGMxNjk4Nj">Bech Distribution A/S (BECH)</a></li>
@@ -62,11 +62,11 @@
                 <li><a class="dropdown-item" href="#" data-warehouse="f68a2f8fa001a7d8227c0475371ce6ab5d5a622605">Distribution Plus (DP-PAK)</a></li>
                 <li><a class="dropdown-item" href="#" data-warehouse="75d3fc49f519a11c3ced357ae96da4b706e8a9fe4e">DSV (DSV KORT)</a></li>
                 <li><a class="dropdown-item" href="#" data-warehouse="ZTBmMzUzMzY1OTI0MmQxYmE0MTY4MGE2NzE2MDdkMTYxNjk4Nj">DSV (DSV-PAK)</a></li>
-                <li><a class="dropdown-item" href="#" data-warehouse="e889588fe7864a11407f270c1c9df52f8c5ef50314">Godshotellet Sjælland (GODS-H)</a></li>
+                <li><a class="dropdown-item" href="#" data-warehouse="e889588fe7864a11407f270c1c9df52f8c5ef50314">Godshotellet Sjï¿½lland (GODS-H)</a></li>
                 <li><a class="dropdown-item" href="#" data-warehouse="80bd0c005fc994296818b8dc10ba3504cedf7df4dd">Hedehusene Lagersalg (H - LAGERS)</a></li>
                 <li><a class="dropdown-item" href="#" data-warehouse="2615ccf25e8f7ab92a1e04f67fb94711ab90d06a37b">Hede2 (HEDE)</a></li>
-                <li><a class="dropdown-item" href="#" data-warehouse="e93295a7dff57e57c5098d500897bce9eecd60634a">Lindstrøm Lager (LIND-KORT)</a></li>
-                <li><a class="dropdown-item" href="#" data-warehouse="ccbcec2966716815a95608102cef29f188716db00d">Lindstrøm Lager (LIND-PAK)</a></li>
+                <li><a class="dropdown-item" href="#" data-warehouse="e93295a7dff57e57c5098d500897bce9eecd60634a">Lindstrï¿½m Lager (LIND-KORT)</a></li>
+                <li><a class="dropdown-item" href="#" data-warehouse="ccbcec2966716815a95608102cef29f188716db00d">Lindstrï¿½m Lager (LIND-PAK)</a></li>
                 <li><a class="dropdown-item" href="#" data-warehouse="30ea9c88920e0ce0f4c801ebed9ea1a67e3675eb31">Skanlog A/S (SKANLOG-GL)</a></li>
                 <li><a class="dropdown-item" href="#" data-warehouse="e1e9764d283d43aeafe70bbb04ba120b0e2928ed0c">Skanlog A/S (SKANLOG-IS)</a></li>
                 <li><a class="dropdown-item" href="#" data-warehouse="47c29c9659f61c6553fd59c916f0687f6ee1f1d9ad">GaveFabrikkens lager (HEDEHUSENE)</a></li>
@@ -82,6 +82,14 @@
     <div class="row mb-3">
         <div class="col">
             <button id="showModalInfoBtn" class="btn btn-info">LeveringsInfo</button>
+        </div>
+        <div class="col text-center">
+            <div id="delivery-date-selector" style="display: none;">
+                <label for="delivery-date-dropdown" class="form-label">Leveringsdato:</label>
+                <select id="delivery-date-dropdown" class="form-select d-inline-block" style="width: auto;">
+                    <option value="">VÃ¦lg leveringsdato</option>
+                </select>
+            </div>
         </div>
         <div class="col text-end">
             <button id="showModalBtn" class="btn btn-primary">Upload File</button>
@@ -110,7 +118,7 @@
                             <span class="fw-bold">Filer/status</span>
                             <div>
                                 <span class="badge bg-warning me-2">Afventer</span>
-                                <span class="text-muted">Ikke udført endnu</span>
+                                <span class="text-muted">Ikke udfï¿½rt endnu</span>
                             </div>
                         </div>
                     </div>
@@ -119,7 +127,7 @@
                             <span class="fw-bold">Leveringsinfo</span>
                             <div>
                                 <span class="badge bg-warning me-2">Afventer</span>
-                                <span class="text-muted">Ikke udført endnu</span>
+                                <span class="text-muted">Ikke udfï¿½rt endnu</span>
                             </div>
                         </div>
                     </div>
@@ -128,7 +136,7 @@
                             <span class="fw-bold">Download</span>
                             <div>
                                 <span class="badge bg-warning me-2">Afventer</span>
-                                <span class="text-muted">Ikke udført endnu</span>
+                                <span class="text-muted">Ikke udfï¿½rt endnu</span>
                             </div>
                         </div>
                     </div>
@@ -137,7 +145,7 @@
                             <span class="fw-bold">Opdatere status</span>
                             <div>
                                 <span class="badge bg-warning me-2">Afventer</span>
-                                <span class="text-muted">Ikke udført endnu</span>
+                                <span class="text-muted">Ikke udfï¿½rt endnu</span>
                             </div>
                         </div>
                     </div>
@@ -163,7 +171,7 @@
                     </div>
                     <div class="p-3 border-bottom">
                         <div class="d-flex justify-content-between align-items-center" id="guide-check-status">
-                            <span class="fw-bold">Pakkevejledning læst/fulgt</span>
+                            <span class="fw-bold">Pakkevejledning lï¿½st/fulgt</span>
                             <div>
                                 <span class="badge bg-warning me-2">Afventer</span>
                                 <span class="text-muted">Ikke godkendt endnu</span>
@@ -285,14 +293,14 @@
                 $container.find('.badge')
                     .removeClass('bg-warning')
                     .addClass('bg-success')
-                    .text('Udført');
+                    .text('Udfï¿½rt');
                 $container.find('.text-muted').text(this.formatTimestamp(timestamp));
             } else {
                 $container.find('.badge')
                     .removeClass('bg-success')
                     .addClass('bg-warning')
                     .text('Afventer');
-                $container.find('.text-muted').text('Ikke udført endnu');
+                $container.find('.text-muted').text('Ikke udfï¿½rt endnu');
             }
         }
 
@@ -359,16 +367,60 @@
 
     $(document).ready(function(){
         const shopId = <?php echo $_GET["shopID"]; ?>;
+        let currentExpireDateId = <?php echo isset($_GET["expireDateId"]) ? $_GET["expireDateId"] : 'null'; ?>;
+        let sw;
+        let statusHandler;
 
         // Definer BASE_AJAX_URL hvis den ikke allerede er defineret
         const BASE_AJAX_URL = 'https://system.gavefabrikken.dk/gavefabrikken_backend/index.php?rt=';
 
-        // Initialiser ShopWarehouse
-        const sw = new ShopWarehouse(shopId);
-        sw.init();
+        // Check if this is a cardshop and load delivery dates
+        $.post(BASE_AJAX_URL + "shopWarehouse/getDeliveryDates", {shop_id: shopId}, function(response, textStatus) {
+            if(response.is_cardshop && response.delivery_dates.length > 0) {
+                // Show delivery date selector
+                $("#delivery-date-selector").show();
 
-        // Initialiser StatusHandler
-        const statusHandler = new StatusHandler(shopId);
+                // Populate dropdown
+                let dropdown = $("#delivery-date-dropdown");
+                response.delivery_dates.forEach(function(date) {
+                    dropdown.append(`<option value="${date.id}">${date.display_date}</option>`);
+                });
+
+                // Set current selection if available
+                if(currentExpireDateId) {
+                    dropdown.val(currentExpireDateId);
+                }
+
+                // Handle dropdown change
+                dropdown.change(function() {
+                    const selectedExpireDateId = $(this).val();
+                    if(selectedExpireDateId) {
+                        // Reload page with selected expire_date_id
+                        window.location.href = `?shopID=${shopId}&expireDateId=${selectedExpireDateId}`;
+                    } else {
+                        // Reload page without expire_date_id
+                        window.location.href = `?shopID=${shopId}`;
+                    }
+                });
+
+                // Only initialize if a delivery date is selected for cardshops
+                if(currentExpireDateId) {
+                    initializeWarehouse();
+                }
+            } else {
+                // Regular shop - initialize normally
+                initializeWarehouse();
+            }
+        }, "json");
+
+        function initializeWarehouse() {
+            // Initialiser ShopWarehouse
+            sw = new ShopWarehouse(shopId, currentExpireDateId);
+            sw.init();
+
+            // Initialiser StatusHandler
+            statusHandler = new StatusHandler(shopId);
+        }
 
         // Modal handlers
         $("#showModalBtn").click(function() {
@@ -426,15 +478,20 @@
                 formData.append('files[]', files[i]);
             }
 
+            let uploadUrl = `https://system.gavefabrikken.dk/gavefabrikken_backend/index.php?rt=shopWarehouse/multiFileupload&shop_id=${shopId}`;
+            if(currentExpireDateId) {
+                uploadUrl += `&expire_date_id=${currentExpireDateId}`;
+            }
+
             $.ajax({
-                url: `https://system.gavefabrikken.dk/gavefabrikken_backend/index.php?rt=shopWarehouse/multiFileupload&shop_id=${shopId}`,
+                url: uploadUrl,
                 type: 'POST',
                 data: formData,
                 processData: false,
                 contentType: false,
                 success: function(data) {
                     bootstrap.Modal.getInstance(document.getElementById('uploadModal')).hide();
-                    sw.init();
+                    if(sw) sw.init();
                 }
             });
         }

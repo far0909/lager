@@ -66,7 +66,15 @@ class shopWarehouseController Extends baseController
     {
         if (isset($_POST['shop_id'])) {
             $shopID = $_POST['shop_id'];
+            $expireDateId = isset($_POST['expire_date_id']) ? $_POST['expire_date_id'] : null;
+
             $options = array('shop_id' => $shopID);
+            if ($expireDateId) {
+                $options['expire_date_id'] = $expireDateId;
+            } else {
+                $options['expire_date_id'] = null;
+            }
+
             $settings = WarehouseSettings::find('all', $options);
             $packaging_status = $_POST['packaging_status'];
             if (sizeof($settings) == 0) {
@@ -76,6 +84,7 @@ class shopWarehouseController Extends baseController
                     "packaging_status" => $packaging_status,
                     "token" => $token,
                     "shop_id"=>$shopID,
+                    "expire_date_id"=>$expireDateId,
                     "noter"=>""
                 ];
                 $res = WarehouseSettings::createFiles($postData);
@@ -97,7 +106,15 @@ class shopWarehouseController Extends baseController
     {
         if (isset($_POST['shop_id'])) {
             $shopID = $_POST['shop_id'];
+            $expireDateId = isset($_POST['expire_date_id']) ? $_POST['expire_date_id'] : null;
+
             $options = array('shop_id' => $shopID);
+            if ($expireDateId) {
+                $options['expire_date_id'] = $expireDateId;
+            } else {
+                $options['expire_date_id'] = null;
+            }
+
             $settings = WarehouseSettings::find('all', $options);
             $note = $_POST['note'];
             if (sizeof($settings) == 0) {
@@ -106,6 +123,7 @@ class shopWarehouseController Extends baseController
                 $postData = [
                     "token" => $token,
                     "shop_id"=>$shopID,
+                    "expire_date_id"=>$expireDateId,
                     "note_move_order"=>$note
                 ];
                 $res = WarehouseSettings::createFiles($postData);
@@ -125,7 +143,15 @@ class shopWarehouseController Extends baseController
     {
         if (isset($_POST['shop_id'])) {
             $shopID = $_POST['shop_id'];
+            $expireDateId = isset($_POST['expire_date_id']) ? $_POST['expire_date_id'] : null;
+
             $options = array('shop_id' => $shopID);
+            if ($expireDateId) {
+                $options['expire_date_id'] = $expireDateId;
+            } else {
+                $options['expire_date_id'] = null;
+            }
+
             $settings = WarehouseSettings::find('all', $options);
             $note = $_POST['note'];
             if (sizeof($settings) == 0) {
@@ -134,6 +160,7 @@ class shopWarehouseController Extends baseController
                 $postData = [
                     "token" => $token,
                     "shop_id"=>$shopID,
+                    "expire_date_id"=>$expireDateId,
                     "noter"=>$note
                 ];
                 $res = WarehouseSettings::createFiles($postData);
@@ -152,12 +179,20 @@ class shopWarehouseController Extends baseController
     {
         if (isset($_POST['shop_id'])) {
             $shopID = $_POST['shop_id'];
+            $expireDateId = isset($_POST['expire_date_id']) ? $_POST['expire_date_id'] : null;
+
             $options = array('shop_id' => $shopID);
+            if ($expireDateId) {
+                $options['expire_date_id'] = $expireDateId;
+            } else {
+                $options['expire_date_id'] = null;
+            }
+
             $settings = WarehouseSettings::find('all', $options);
             if(!$settings){
-                    $sql = "INSERT INTO warehouse_settings (shop_id,token) values (".$shopID.",'".generateTokenWithTime()."')";
+                    $expireDateIdValue = $expireDateId ? $expireDateId : 'NULL';
+                    $sql = "INSERT INTO warehouse_settings (shop_id,expire_date_id,token) values (".$shopID.",".$expireDateIdValue.",'".generateTokenWithTime()."')";
                     $res = Dbsqli::setSql2($sql);
-                    $options = array('shop_id' => $shopID);
                     $settings = WarehouseSettings::find('all', $options);
                 }
             response::success(json_encode($settings));
@@ -272,6 +307,8 @@ class shopWarehouseController Extends baseController
         if (!empty($_FILES['files'])) {
             $total = count($_FILES['files']['name']);
             $shopID = $_GET["shop_id"];
+            $expireDateId = isset($_GET["expire_date_id"]) ? $_GET["expire_date_id"] : null;
+
             for ($i = 0; $i < $total; $i++) {
                 $extension = pathinfo(basename($_FILES["files"]["name"][$i]), PATHINFO_EXTENSION);
                 $realFilename = basename($_FILES["files"]["name"][$i]);
@@ -289,6 +326,7 @@ class shopWarehouseController Extends baseController
                         "token"=>$token,
                        "real_filename"=> $realFilename,
                        "shop_id"=> $shopID,
+                       "expire_date_id"=> $expireDateId,
                        "user_id"=>40
                     ];
                     $res = WarehouseFiles::createFiles($postData);
@@ -309,12 +347,43 @@ class shopWarehouseController Extends baseController
     }
     public function readByShop(){
         $shopID = $_POST["shop_id"];
+        $expireDateId = isset($_POST['expire_date_id']) ? $_POST['expire_date_id'] : null;
+
         $options = array('shop_id' => $shopID,'active' =>1);
+        if ($expireDateId) {
+            $options['expire_date_id'] = $expireDateId;
+        } else {
+            $options['expire_date_id'] = null;
+        }
+
         $WarehouseFiles = WarehouseFiles::find('all', $options);
 
-
-
         response::success(json_encode($WarehouseFiles));
+    }
+
+    public function getDeliveryDates(){
+        if (isset($_POST['shop_id'])) {
+            $shopID = $_POST['shop_id'];
+
+            // Check if shop is a cardshop
+            $sql = "SELECT shop_id FROM cardshop_settings WHERE shop_id = ".$shopID;
+            $cardshopCheck = Dbsqli::getSql($sql);
+
+            if(!$cardshopCheck){
+                response::success(json_encode(['is_cardshop' => false, 'delivery_dates' => []]));
+                return;
+            }
+
+            // Get delivery dates for cardshop
+            $sql = "SELECT ed.id, ed.display_date, ed.expire_date
+                    FROM cardshop_expiredate ce
+                    JOIN expire_date ed ON ce.expire_date_id = ed.id
+                    WHERE ce.shop_id = ".$shopID."
+                    ORDER BY ed.expire_date ASC";
+            $deliveryDates = Dbsqli::getSql($sql);
+
+            response::success(json_encode(['is_cardshop' => true, 'delivery_dates' => $deliveryDates]));
+        }
     }
 }
 

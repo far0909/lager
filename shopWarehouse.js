@@ -1,7 +1,7 @@
 var BASE_AJAX_URL = "https://system.gavefabrikken.dk/gavefabrikken_backend/index.php?rt=";
 
 
-function ShopWarehouse(shopID) {
+function ShopWarehouse(shopID, expireDateId = null) {
     if (typeof shopID !== 'number') {
         alert("Der er opstået en fejl")
         return;
@@ -10,6 +10,7 @@ function ShopWarehouse(shopID) {
     this.template = new ShopWarehouseTemplate;
     this.presentStatus = 0;
     this.shopID = shopID;
+    this.expireDateId = expireDateId;
     this.data = {};
     this.init = async function(){
 
@@ -129,7 +130,12 @@ function ShopWarehouse(shopID) {
                 alert("Du kan ikke længere ændre denne status, da lageret har godkendt lister")
             }
             */
-                $.post(BASE_AJAX_URL+"shopWarehouse/updateStatus", {shop_id: self.shopID, packaging_status: packaging_status})
+                let postData = {shop_id: self.shopID, packaging_status: packaging_status};
+                if(self.expireDateId) {
+                    postData.expire_date_id = self.expireDateId;
+                }
+
+                $.post(BASE_AJAX_URL+"shopWarehouse/updateStatus", postData)
                 .done(function(returnMsg) {
                     alert("Status ændret")
                     location.reload();
@@ -141,7 +147,12 @@ function ShopWarehouse(shopID) {
         });
         $("#update-packaging-note").unbind("click").click(function(){
             let note = $("#packaging-note").val();
-            $.post(BASE_AJAX_URL+"shopWarehouse/updateNote", {shop_id: self.shopID, note: note})
+            let postData = {shop_id: self.shopID, note: note};
+            if(self.expireDateId) {
+                postData.expire_date_id = self.expireDateId;
+            }
+
+            $.post(BASE_AJAX_URL+"shopWarehouse/updateNote", postData)
                 .done(function(returnMsg) {
                     // Do something with returnMsg
                     alert("Salgsnote er gemt")
@@ -153,7 +164,12 @@ function ShopWarehouse(shopID) {
         });
         $("#update-note-move-order").unbind("click").click(function(){
             let note = $("#note-move-order").val();
-            $.post(BASE_AJAX_URL+"shopWarehouse/updateNoteMoveOrder", {shop_id: self.shopID, note: note})
+            let postData = {shop_id: self.shopID, note: note};
+            if(self.expireDateId) {
+                postData.expire_date_id = self.expireDateId;
+            }
+
+            $.post(BASE_AJAX_URL+"shopWarehouse/updateNoteMoveOrder", postData)
                 .done(function(returnMsg) {
                     // Do something with returnMsg
                     alert("Overflytningsordre er gemt")
@@ -168,7 +184,12 @@ function ShopWarehouse(shopID) {
 
     this.readFiles = async function (shopID){
         return new Promise((resolve, reject) => {
-            var jqxhr = $.post(BASE_AJAX_URL+"shopWarehouse/readByShop", {shop_id: shopID}, function(returnMsg, textStatus)
+            let postData = {shop_id: shopID};
+            if(self.expireDateId) {
+                postData.expire_date_id = self.expireDateId;
+            }
+
+            var jqxhr = $.post(BASE_AJAX_URL+"shopWarehouse/readByShop", postData, function(returnMsg, textStatus)
             {
                resolve(returnMsg);
             }, "json")
@@ -180,7 +201,12 @@ function ShopWarehouse(shopID) {
      }
     this.readStatus = async function (shopID){
         return new Promise((resolve, reject) => {
-            var jqxhr = $.post(BASE_AJAX_URL+"shopWarehouse/readStatus", {shop_id: shopID}, function(returnMsg, textStatus)
+            let postData = {shop_id: shopID};
+            if(self.expireDateId) {
+                postData.expire_date_id = self.expireDateId;
+            }
+
+            var jqxhr = $.post(BASE_AJAX_URL+"shopWarehouse/readStatus", postData, function(returnMsg, textStatus)
             {
                 resolve(returnMsg);
             }, "json")
