@@ -389,6 +389,8 @@
                 // Set current selection if available
                 if(currentExpireDateId) {
                     dropdown.val(currentExpireDateId);
+                    // Initialize warehouse for selected delivery date
+                    initializeWarehouse();
                 }
 
                 // Handle dropdown change
@@ -402,16 +404,15 @@
                         window.location.href = `?shopID=${shopId}`;
                     }
                 });
-
-                // Only initialize if a delivery date is selected for cardshops
-                if(currentExpireDateId) {
-                    initializeWarehouse();
-                }
             } else {
                 // Regular shop - initialize normally
                 initializeWarehouse();
             }
-        }, "json");
+        }, "json").fail(function() {
+            // If AJAX fails, initialize as regular shop
+            console.log("Failed to check cardshop status, initializing as regular shop");
+            initializeWarehouse();
+        });
 
         function initializeWarehouse() {
             // Initialiser ShopWarehouse
