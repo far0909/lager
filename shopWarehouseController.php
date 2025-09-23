@@ -186,17 +186,19 @@ class shopWarehouseController Extends baseController
             $shopID = $_POST['shop_id'];
             $expireDateId = isset($_POST['expire_date_id']) ? $_POST['expire_date_id'] : null;
 
+            // Use original logic for normal shops, extend for cardshops
             $options = array('shop_id' => $shopID);
             if ($expireDateId) {
                 $options['expire_date_id'] = $expireDateId;
-            } else {
-                $options['expire_date_id'] = null;
             }
 
             $settings = WarehouseSettings::find('all', $options);
             if(!$settings){
-                $expireDateIdValue = $expireDateId ? $expireDateId : 'NULL';
-                $sql = "INSERT INTO warehouse_settings (shop_id,expire_date_id,token) values (".$shopID.",".$expireDateIdValue.",'".generateTokenWithTime()."')";
+                if ($expireDateId) {
+                    $sql = "INSERT INTO warehouse_settings (shop_id,expire_date_id,token) values (".$shopID.",".$expireDateId.",'".generateTokenWithTime()."')";
+                } else {
+                    $sql = "INSERT INTO warehouse_settings (shop_id,token) values (".$shopID.",'".generateTokenWithTime()."')";
+                }
                 $res = Dbsqli::setSql2($sql);
                 $settings = WarehouseSettings::find('all', $options);
             }
@@ -354,11 +356,10 @@ class shopWarehouseController Extends baseController
         $shopID = $_POST["shop_id"];
         $expireDateId = isset($_POST['expire_date_id']) ? $_POST['expire_date_id'] : null;
 
+        // Use original logic for normal shops, extend for cardshops
         $options = array('shop_id' => $shopID,'active' =>1);
         if ($expireDateId) {
             $options['expire_date_id'] = $expireDateId;
-        } else {
-            $options['expire_date_id'] = null;
         }
 
         $WarehouseFiles = WarehouseFiles::find('all', $options);

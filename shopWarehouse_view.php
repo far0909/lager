@@ -78,6 +78,11 @@
         <button class="btn btn-primary" id="getAddressBtn">Hent Adresser</button>
     </div>
 </div>
+<div class="alert alert-warning alert-dismissible fade show" role="alert">
+    <strong>Under udvikling:</strong> Dette modul er under udvikling og kan indeholde fejl eller ufuldstændig funktionalitet.
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+
 <div class="container mt-4">
     <div class="row mb-3">
         <div class="col">
