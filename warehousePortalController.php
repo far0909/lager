@@ -124,8 +124,17 @@ class warehousePortalController  Extends baseController
     {
 
         $token = $_POST["token"];
-        $WarehouseFiles = WarehouseFiles::find_by_sql("
-        SELECT * FROM `warehouse_settings` WHERE `shop_id` in (SELECT id FROM `shop` WHERE `token` LIKE '".$token."') and active = 1");
+        $expireDateId = isset($_POST['expire_date_id']) ? $_POST['expire_date_id'] : null;
+
+        $sql = "SELECT * FROM `warehouse_settings` WHERE `shop_id` in (SELECT id FROM `shop` WHERE `token` LIKE '".$token."')";
+
+        if ($expireDateId) {
+            $sql .= " AND expire_date_id = " . intval($expireDateId);
+        } else {
+            $sql .= " AND expire_date_id IS NULL";
+        }
+
+        $WarehouseFiles = WarehouseFiles::find_by_sql($sql);
         response::success(json_encode($WarehouseFiles));
 
 
@@ -133,7 +142,21 @@ class warehousePortalController  Extends baseController
     }
     public function buttonClick(){
         $token = $_POST["token"];
-        $WarehouseSettings = WarehouseSettings::find_by_sql("select id from warehouse_settings where shop_id in ( SELECT id FROM `shop` WHERE `token` LIKE '".$token."')");
+        $expireDateId = isset($_POST['expire_date_id']) ? $_POST['expire_date_id'] : null;
+
+        $sql = "select id from warehouse_settings where shop_id in ( SELECT id FROM `shop` WHERE `token` LIKE '".$token."')";
+        if ($expireDateId) {
+            $sql .= " AND expire_date_id = " . intval($expireDateId);
+        } else {
+            $sql .= " AND expire_date_id IS NULL";
+        }
+
+        $WarehouseSettings = WarehouseSettings::find_by_sql($sql);
+
+        if (sizeof($WarehouseSettings) == 0) {
+            response::success(json_encode([]));
+            return;
+        }
 
         $logdate = date('Y-m-d H:i:s');
         if($_POST["button_type"] == "download") {
@@ -149,7 +172,6 @@ class warehousePortalController  Extends baseController
             $field = "log_status";
         }
 
-
         $id = $WarehouseSettings[0]->attributes["id"];
         $data = [
             "id" => $id,
@@ -162,15 +184,28 @@ class warehousePortalController  Extends baseController
     public function readShopDownloadData(){
 
         $token = $_POST["token"];
+        $expireDateId = isset($_POST['expire_date_id']) ? $_POST['expire_date_id'] : null;
 
         $shop = Shop::find_by_token($token);
-        $warehouseSettings = WarehouseSettings::find_by_shop_id($shop->id);
-        if($warehouseSettings){
-            $warehouseSettings->log_menu = date('Y-m-d H:i:s');
-            $warehouseSettings->save();
+
+        // Update log_menu for appropriate warehouse_settings record
+        $logSql = "UPDATE warehouse_settings SET log_menu = '" . date('Y-m-d H:i:s') . "' WHERE shop_id = " . $shop->id;
+        if ($expireDateId) {
+            $logSql .= " AND expire_date_id = " . intval($expireDateId);
+        } else {
+            $logSql .= " AND expire_date_id IS NULL";
+        }
+        Dbsqli::setSql2($logSql);
+
+        // Get warehouse files with expire_date_id filter
+        $filesSql = "SELECT * FROM `warehouse_files` WHERE `shop_id` = " . $shop->id . " AND active = 1";
+        if ($expireDateId) {
+            $filesSql .= " AND expire_date_id = " . intval($expireDateId);
+        } else {
+            $filesSql .= " AND expire_date_id IS NULL";
         }
 
-        $WarehouseFiles = WarehouseFiles::find_by_sql("SELECT * FROM `warehouse_files` WHERE `shop_id` in (SELECT id FROM `shop` WHERE `token` LIKE '".$token."') and active = 1");
+        $WarehouseFiles = WarehouseFiles::find_by_sql($filesSql);
         response::success(json_encode($WarehouseFiles));
     }
 
@@ -217,7 +252,6 @@ class warehousePortalController  Extends baseController
     public function readShopData()
     {
         $token = $_POST["token"];
-       // $token = preg_replace('/\s+/', '', $token);
 
 
 
@@ -241,21 +275,33 @@ class warehousePortalController  Extends baseController
                 shop_metadata.so_no,
                 shop_metadata.user_count,
                 company.gift_responsible,
-                foreign_delivery_date
-                
-                
-                
-            FROM 
+                foreign_delivery_date,
+
+                -- Cardshop fields
+                cs.shop_id as is_cardshop,
+                ce.expire_date_id,
+                ed.display_date as expire_display_date,
+                ed.week_no as expire_week_no,
+                CASE WHEN cs.shop_id IS NOT NULL THEN 'Cardshop' ELSE 'Normal' END as shop_type
+
+            FROM
                 `shop`
                 inner JOIN navision_location on navision_location.code = `shop`.`reservation_code`
-                
+
+                -- Cardshop joins
+                left JOIN cardshop_settings cs on cs.shop_id = shop.id
+                left JOIN cardshop_expiredate ce on ce.shop_id = shop.id
+                left JOIN expire_date ed on ed.id = ce.expire_date_id AND ed.is_delivery != 1
 
             left join
                 warehouse_settings on `shop`.id = warehouse_settings.shop_id
+                AND (warehouse_settings.expire_date_id = ce.expire_date_id OR (warehouse_settings.expire_date_id IS NULL AND cs.shop_id IS NULL))
             left JOIN
                 shop_metadata on shop.id = shop_metadata.shop_id
             left JOIN
-                company on company.id = (SELECT company_id FROM `company_shop` WHERE shop_id = `shop`.id )
+                company_shop on company_shop.shop_id = shop.id
+            left JOIN
+                company on company.id = company_shop.company_id
 	    left join 
 				shop_user on shop_user.company_id =  company.id                
         left join
@@ -264,12 +310,11 @@ class warehousePortalController  Extends baseController
         WHERE 
        
                navision_location.`token` LIKE '".$token."'
-    and shop.is_gift_certificate = 0
     and (shop.shop_mode = 1 or shop.shop_mode = 6)
     and shop_metadata.so_no != ''
     and (shop_metadata.so_no LIKE 'SO%' or shop_metadata.so_no LIKE 'so%')
-             GROUP BY 
-                shop.id
+             GROUP BY
+                shop.id, ce.expire_date_id
           ");
 
 
@@ -321,7 +366,16 @@ class warehousePortalController  Extends baseController
         $approved_count_date = $approved_count_date == "" ? NULL : date('d-m-Y H:i:s', strtotime($approved_count_date));
 
         // Get warehouse settings ID for the shop
-        $WarehouseSettings = WarehouseSettings::find_by_sql("select id from warehouse_settings where shop_id in ( SELECT id FROM `shop` WHERE `token` LIKE '".$token."')");
+        $expireDateId = isset($_POST['expire_date_id']) ? $_POST['expire_date_id'] : null;
+
+        $sql = "select id from warehouse_settings where shop_id in ( SELECT id FROM `shop` WHERE `token` LIKE '".$token."')";
+        if ($expireDateId) {
+            $sql .= " AND expire_date_id = " . intval($expireDateId);
+        } else {
+            $sql .= " AND expire_date_id IS NULL";
+        }
+
+        $WarehouseSettings = WarehouseSettings::find_by_sql($sql);
 
         $id = $WarehouseSettings[0]->attributes["id"];
 
@@ -346,7 +400,16 @@ class warehousePortalController  Extends baseController
     {
         $token = $_POST["token"];
         $packaging_status = $_POST['packaging_status'];
-        $WarehouseFiles = WarehouseSettings::find_by_sql("select id from warehouse_settings where shop_id in ( SELECT id FROM `shop` WHERE `token` LIKE '".$token."')");
+        $expireDateId = isset($_POST['expire_date_id']) ? $_POST['expire_date_id'] : null;
+
+        $sql = "select id from warehouse_settings where shop_id in ( SELECT id FROM `shop` WHERE `token` LIKE '".$token."')";
+        if ($expireDateId) {
+            $sql .= " AND expire_date_id = " . intval($expireDateId);
+        } else {
+            $sql .= " AND expire_date_id IS NULL";
+        }
+
+        $WarehouseFiles = WarehouseSettings::find_by_sql($sql);
 
         $id =  $WarehouseFiles[0]->attributes["id"];
         $data = [
@@ -360,7 +423,16 @@ class warehousePortalController  Extends baseController
     {
         $token = $_POST["token"];
         $note = $_POST['note_from_warehouse_to_gf'];
-        $WarehouseFiles = WarehouseSettings::find_by_sql("select id from warehouse_settings where shop_id in ( SELECT id FROM `shop` WHERE `token` LIKE '".$token."')");
+        $expireDateId = isset($_POST['expire_date_id']) ? $_POST['expire_date_id'] : null;
+
+        $sql = "select id from warehouse_settings where shop_id in ( SELECT id FROM `shop` WHERE `token` LIKE '".$token."')";
+        if ($expireDateId) {
+            $sql .= " AND expire_date_id = " . intval($expireDateId);
+        } else {
+            $sql .= " AND expire_date_id IS NULL";
+        }
+
+        $WarehouseFiles = WarehouseSettings::find_by_sql($sql);
 
         $id =  $WarehouseFiles[0]->attributes["id"];
         $data = [

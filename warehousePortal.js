@@ -52,9 +52,12 @@ function WarehousePortal() {
                 {"orderable": false, "targets": -1},
                 {"width": "50px", "targets": 1},
                 {"width": "150px", "targets": 6},
+                {"width": "80px", "targets": 13},   // Shop Type
+                {"width": "100px", "targets": 14},  // Expire Date
+                {"width": "70px", "targets": 15},   // Expire ID
                 {"width": "200px", "targets": -1},
-                {"type": "date-dk", "targets": 11},
-                {"type": "date-dk", "targets": 12}
+                {"type": "date-dk", "targets": 12},
+                {"type": "date-dk", "targets": 14}
             ],
             "autoWidth": false,
             "dom": '<"table-search"f>rt', // Added search box above table
@@ -72,7 +75,10 @@ function WarehousePortal() {
                 {"data": "10"}, // Udland
                 {"data": "11"}, // Udland-AF
                 {"data": "12"}, // Leveringsdato
-                {"data": "13"}  // Actions column
+                {"data": "13"}, // Shop Type
+                {"data": "14"}, // Expire Date
+                {"data": "15"}, // Expire ID
+                {"data": "16"}  // Actions column
             ]
         });
 
@@ -116,9 +122,14 @@ function WarehousePortal() {
                 })
         });
     };
-    this.loadShopDownloadData = async function (token){
+    this.loadShopDownloadData = async function (token, expireDateId){
         return new Promise((resolve, reject) => {
-            var jqxhr = $.post(BASE_AJAX_URL+"warehousePortal/readShopDownloadData", {token: token}, function(returnMsg, textStatus)
+            let postData = {token: token};
+            if (expireDateId) {
+                postData.expire_date_id = expireDateId;
+            }
+
+            var jqxhr = $.post(BASE_AJAX_URL+"warehousePortal/readShopDownloadData", postData, function(returnMsg, textStatus)
             {
                 resolve(returnMsg);
             }, "json")
@@ -230,19 +241,21 @@ function WarehousePortal() {
 
         $(".hent-filer").unbind("click").click( async function(){
             let token = $(this).attr("data-id");
+            let expireDateId = $(this).attr("data-expire-date-id");
 
             // Send notification før vi åbner modalen
-            await self.sendButtonClickNotification('files_status', token);
+            let buttonClickData = {token: token, expire_date_id: expireDateId};
+            await self.sendButtonClickNotification('files_status', buttonClickData);
 
             $("#myModal").html("");
             // Her åbner vi modalen
             $("#myModal").dialog("open");
 
-            let data = await self.loadShopDownloadData(token);
+            let data = await self.loadShopDownloadData(token, expireDateId);
             $("#myModal").html(self.fileDowonloadTemplate(data));
-            let status = await self.readStatus(token);
+            let status = await self.readStatus(token, expireDateId);
             self.setPackagingStatus(status);
-            self.setModalEvents(token);
+            self.setModalEvents(token, expireDateId);
 
 
 
@@ -250,9 +263,11 @@ function WarehousePortal() {
 
         $(".info").unbind("click").click( async function(){
             let token = $(this).attr("data-id");
+            let expireDateId = $(this).attr("data-expire-date-id");
 
             // Send notification før vi åbner info modalen
-            await self.sendButtonClickNotification('info', token);
+            let buttonClickData = {token: token, expire_date_id: expireDateId};
+            await self.sendButtonClickNotification('info', buttonClickData);
 
             $("#myModalInfo").html("");
             $("#myModalInfo").dialog("open");
@@ -328,22 +343,35 @@ function WarehousePortal() {
         link.click();
         document.body.removeChild(link);
     };
-    this.sendButtonClickNotification = async function(button_type, shop_token) {
+    this.sendButtonClickNotification = async function(button_type, buttonClickData) {
         try {
-            const response = await $.post(BASE_AJAX_URL + "warehousePortal/buttonClick", {
-                token: shop_token,
+            let postData = {
                 button_type: button_type
-            });
-            console.log("Button click notification sent:", button_type, shop_token);
+            };
+
+            if (typeof buttonClickData === 'string') {
+                // Backward compatibility - old token parameter
+                postData.token = buttonClickData;
+            } else {
+                // New object format with token and expire_date_id
+                postData.token = buttonClickData.token;
+                if (buttonClickData.expire_date_id) {
+                    postData.expire_date_id = buttonClickData.expire_date_id;
+                }
+            }
+
+            const response = await $.post(BASE_AJAX_URL + "warehousePortal/buttonClick", postData);
+            console.log("Button click notification sent:", button_type, buttonClickData);
         } catch (error) {
             console.error("Error sending button click notification:", error);
         }
     };
-    this.setModalEvents = function(shopToken){
+    this.setModalEvents = function(shopToken, expireDateId){
         let self = this;
         $(".swh-download").unbind("click").click(async function() {
             // Send notification før download
-            await self.sendButtonClickNotification('download', shopToken);
+            let buttonClickData = {token: shopToken, expire_date_id: expireDateId};
+            await self.sendButtonClickNotification('download', buttonClickData);
 
             if($("#packaging-status").val() < 4) {
                 alert("HUSK at ændre STATUS til 'Pakkeri igang', hvis der skal pakkes");
@@ -354,7 +382,8 @@ function WarehousePortal() {
         $("#update-packaging-status").unbind("click").click(async function(){
             let new_packaging_status = $("#packaging-status").val();
             let current_status = self.presentStatus;
-            await self.sendButtonClickNotification('status_update', shopToken);
+            let buttonClickData = {token: shopToken, expire_date_id: expireDateId};
+            await self.sendButtonClickNotification('status_update', buttonClickData);
             // Get status text for both current and new status
             const statList = [
                 "Ingen status sat",
@@ -378,7 +407,11 @@ function WarehousePortal() {
                 "Tryk OK for at bekræfte ændringen.";
 
             if(confirm(confirmMessage)) {
-                $.post(BASE_AJAX_URL+"warehousePortal/updateStatus", {token: shopToken, packaging_status: new_packaging_status})
+                let updateData = {token: shopToken, packaging_status: new_packaging_status};
+                if (expireDateId) {
+                    updateData.expire_date_id = expireDateId;
+                }
+                $.post(BASE_AJAX_URL+"warehousePortal/updateStatus", updateData)
                     .done(function(returnMsg) {
                         if(returnMsg.status == 0){
                             alert("Der er opståen en fejl")
@@ -434,7 +467,11 @@ function WarehousePortal() {
         $("#save-note-to-gf").unbind("click").click(function(){
 
             let note =  $("#note-to-gf").val();
-            $.post(BASE_AJAX_URL+"warehousePortal/updateNoteToGf", {token: shopToken, note_from_warehouse_to_gf: note})
+            let noteData = {token: shopToken, note_from_warehouse_to_gf: note};
+            if (expireDateId) {
+                noteData.expire_date_id = expireDateId;
+            }
+            $.post(BASE_AJAX_URL+"warehousePortal/updateNoteToGf", noteData)
                 .done(function(returnMsg) {
                     if(returnMsg.status == 0){
                         alert("Der er opståen en fejl")
@@ -524,7 +561,7 @@ function WarehousePortal() {
 
             if(confirm(confirmMessage)) {
                 const currentDate = new Date().toISOString();
-                $.post(BASE_AJAX_URL+"warehousePortal/approval", {
+                let approvalData = {
                     token: shopToken,
                     approved_count_date: formattedDate,
                     approved_count_date_approved_by: countApprovedBy,
@@ -533,7 +570,12 @@ function WarehousePortal() {
                     approved_date: currentDate,
                     approved_ontime: packedOnTime,
                     approved_package_instructions: instructionsRead
-                }, function(returnMsg, textStatus) {
+                };
+                if (expireDateId) {
+                    approvalData.expire_date_id = expireDateId;
+                }
+
+                $.post(BASE_AJAX_URL+"warehousePortal/approval", approvalData, function(returnMsg, textStatus) {
                     alert("Ændringer er nu gemt i systemet!");
                     $("#myModal").dialog('close');
                     setTimeout(function() {
@@ -577,9 +619,14 @@ function WarehousePortal() {
         validateSection('instructions-read', 'instructions-approved-by');
         validateSection('packed-on-time', 'ontime-approved-by');
     };
-    this.readStatus = async function (token){
+    this.readStatus = async function (token, expireDateId){
         return new Promise((resolve, reject) => {
-            var jqxhr = $.post(BASE_AJAX_URL+"warehousePortal/readStatus", {token: token}, function(returnMsg, textStatus)
+            let postData = {token: token};
+            if (expireDateId) {
+                postData.expire_date_id = expireDateId;
+            }
+
+            var jqxhr = $.post(BASE_AJAX_URL+"warehousePortal/readStatus", postData, function(returnMsg, textStatus)
             {
                 resolve(returnMsg);
             }, "json")
@@ -1035,6 +1082,9 @@ function WarehousePortal() {
             <th>Udland</th>
             <th>Udland-AF</th>
             <th>Leveringsdato</th>
+            <th width="80">Shop Type</th>
+            <th width="100">Expire Date</th>
+            <th width="70">Expire ID</th>
             <th width="220">Handling</th>
         </tr>`;
 
@@ -1055,6 +1105,16 @@ function WarehousePortal() {
             let stat = statList[packaging_status];
             let pack_status = packaging_status > 2 ? "released" : "not-released";
             let so_on = i.attributes.so_no || "";
+
+            // Cardshop data
+            let shop_type = i.attributes.shop_type || "Normal";
+            let expire_date_id = i.attributes.expire_date_id || "";
+            let expire_display_date = "";
+
+            if (shop_type === "Cardshop" && i.attributes.expire_display_date) {
+                let weekText = i.attributes.expire_week_no ? ` (Uge ${i.attributes.expire_week_no})` : '';
+                expire_display_date = `${i.attributes.expire_display_date}${weekText}`;
+            }
 
             let earliestForeignDate = "";
             console.log('Processing row:', {
@@ -1137,7 +1197,7 @@ function WarehousePortal() {
             `;
 
             return `
-            <tr data-id="${token}" class="${pack_status} all-shops">
+            <tr data-id="${token}" data-expire-date-id="${expire_date_id}" class="${pack_status} all-shops ${shop_type.toLowerCase()}" style="${shop_type === 'Cardshop' ? 'background-color: #E3F2FD;' : ''}">
                 <td>${so_on}</td>
                 <td width="50">${name}</td>
                 <td>${Ansvarlig}</td>
@@ -1151,14 +1211,17 @@ function WarehousePortal() {
                 <td>${udland}</td>
                 <td>${earliestForeignDate}</td>
                 <td>${deleveri}</td>
+                <td><strong>${shop_type}</strong></td>
+                <td>${expire_display_date}</td>
+                <td>${expire_date_id}</td>
                 <td class="button-column" style="white-space: nowrap;">
-                    <button data-id="${token}" class="hent-filer ${pack_status}" style="${fileButtonStyles}">
+                    <button data-id="${token}" data-expire-date-id="${expire_date_id}" class="hent-filer ${pack_status}" style="${fileButtonStyles}">
                         ${pack_status === 'released' ?
                 '<span style="margin-right: 4px;">✓</span>' :
                 '<span style="margin-right: 4px;">!</span>'}
                         Filer/Status
                     </button>
-                    <button data-id="${token}" class="info" style="${infoButtonStyles}">
+                    <button data-id="${token}" data-expire-date-id="${expire_date_id}" class="info" style="${infoButtonStyles}">
                         <span style="margin-right: 4px;">ℹ</span>
                         Leveringsinfo
                     </button>
