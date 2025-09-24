@@ -291,7 +291,7 @@ class warehousePortalController  Extends baseController
                 -- Cardshop joins
                 left JOIN cardshop_settings cs on cs.shop_id = shop.id
                 left JOIN cardshop_expiredate ce on ce.shop_id = shop.id
-                left JOIN expire_date ed on ed.id = ce.expire_date_id AND ed.is_delivery != 1
+                left JOIN expire_date ed on ed.id = ce.expire_date_id
 
             left join
                 warehouse_settings on `shop`.id = warehouse_settings.shop_id
@@ -313,6 +313,7 @@ class warehousePortalController  Extends baseController
     and (shop.shop_mode = 1 or shop.shop_mode = 6)
     and shop_metadata.so_no != ''
     and (shop_metadata.so_no LIKE 'SO%' or shop_metadata.so_no LIKE 'so%')
+    and (cs.shop_id IS NULL OR (ed.is_delivery != 1 AND ed.is_home_delivery != 1))
              GROUP BY
                 shop.id, ce.expire_date_id
           ");
@@ -377,6 +378,36 @@ class warehousePortalController  Extends baseController
 
         $WarehouseSettings = WarehouseSettings::find_by_sql($sql);
 
+        if (sizeof($WarehouseSettings) == 0) {
+            // Create warehouse_settings record if it doesn't exist
+            $shopSql = "SELECT id FROM `shop` WHERE `token` LIKE '".$token."'";
+            $shopResult = Dbsqli::setSql2($shopSql);
+            if ($shopResult && $shopResult->num_rows > 0) {
+                $shop = $shopResult->fetch_assoc();
+                $shopId = $shop['id'];
+
+                $insertSql = "INSERT INTO warehouse_settings (shop_id, token";
+                if ($expireDateId) {
+                    $insertSql .= ", expire_date_id";
+                }
+                $insertSql .= ") VALUES (".$shopId.", '".generateTokenWithTime()."'";
+                if ($expireDateId) {
+                    $insertSql .= ", ".intval($expireDateId);
+                }
+                $insertSql .= ")";
+
+                Dbsqli::setSql2($insertSql);
+
+                // Re-fetch the created record
+                $WarehouseSettings = WarehouseSettings::find_by_sql($sql);
+            }
+
+            if (sizeof($WarehouseSettings) == 0) {
+                response::success(json_encode(['error' => 'Could not create warehouse_settings record']));
+                return;
+            }
+        }
+
         $id = $WarehouseSettings[0]->attributes["id"];
 
         // Prepare data array with all fields
@@ -411,6 +442,36 @@ class warehousePortalController  Extends baseController
 
         $WarehouseFiles = WarehouseSettings::find_by_sql($sql);
 
+        if (sizeof($WarehouseFiles) == 0) {
+            // Create warehouse_settings record if it doesn't exist
+            $shopSql = "SELECT id FROM `shop` WHERE `token` LIKE '".$token."'";
+            $shopResult = Dbsqli::setSql2($shopSql);
+            if ($shopResult && $shopResult->num_rows > 0) {
+                $shop = $shopResult->fetch_assoc();
+                $shopId = $shop['id'];
+
+                $insertSql = "INSERT INTO warehouse_settings (shop_id, token";
+                if ($expireDateId) {
+                    $insertSql .= ", expire_date_id";
+                }
+                $insertSql .= ") VALUES (".$shopId.", '".generateTokenWithTime()."'";
+                if ($expireDateId) {
+                    $insertSql .= ", ".intval($expireDateId);
+                }
+                $insertSql .= ")";
+
+                Dbsqli::setSql2($insertSql);
+
+                // Re-fetch the created record
+                $WarehouseFiles = WarehouseSettings::find_by_sql($sql);
+            }
+
+            if (sizeof($WarehouseFiles) == 0) {
+                response::success(json_encode(['error' => 'Could not create warehouse_settings record']));
+                return;
+            }
+        }
+
         $id =  $WarehouseFiles[0]->attributes["id"];
         $data = [
             "id"=>$id,
@@ -433,6 +494,36 @@ class warehousePortalController  Extends baseController
         }
 
         $WarehouseFiles = WarehouseSettings::find_by_sql($sql);
+
+        if (sizeof($WarehouseFiles) == 0) {
+            // Create warehouse_settings record if it doesn't exist
+            $shopSql = "SELECT id FROM `shop` WHERE `token` LIKE '".$token."'";
+            $shopResult = Dbsqli::setSql2($shopSql);
+            if ($shopResult && $shopResult->num_rows > 0) {
+                $shop = $shopResult->fetch_assoc();
+                $shopId = $shop['id'];
+
+                $insertSql = "INSERT INTO warehouse_settings (shop_id, token";
+                if ($expireDateId) {
+                    $insertSql .= ", expire_date_id";
+                }
+                $insertSql .= ") VALUES (".$shopId.", '".generateTokenWithTime()."'";
+                if ($expireDateId) {
+                    $insertSql .= ", ".intval($expireDateId);
+                }
+                $insertSql .= ")";
+
+                Dbsqli::setSql2($insertSql);
+
+                // Re-fetch the created record
+                $WarehouseFiles = WarehouseSettings::find_by_sql($sql);
+            }
+
+            if (sizeof($WarehouseFiles) == 0) {
+                response::success(json_encode(['error' => 'Could not create warehouse_settings record']));
+                return;
+            }
+        }
 
         $id =  $WarehouseFiles[0]->attributes["id"];
         $data = [

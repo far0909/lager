@@ -54,7 +54,6 @@ function WarehousePortal() {
                 {"width": "150px", "targets": 6},
                 {"width": "80px", "targets": 13},   // Shop Type
                 {"width": "100px", "targets": 14},  // Expire Date
-                {"width": "70px", "targets": 15},   // Expire ID
                 {"width": "200px", "targets": -1},
                 {"type": "date-dk", "targets": 12},
                 {"type": "date-dk", "targets": 14}
@@ -77,8 +76,7 @@ function WarehousePortal() {
                 {"data": "12"}, // Leveringsdato
                 {"data": "13"}, // Shop Type
                 {"data": "14"}, // Expire Date
-                {"data": "15"}, // Expire ID
-                {"data": "16"}  // Actions column
+                {"data": "15"}  // Actions column
             ]
         });
 
@@ -124,6 +122,11 @@ function WarehousePortal() {
     };
     this.loadShopDownloadData = async function (token, expireDateId){
         return new Promise((resolve, reject) => {
+            // Convert empty string to null for normal shops
+            if (expireDateId === "" || expireDateId === "undefined") {
+                expireDateId = null;
+            }
+
             let postData = {token: token};
             if (expireDateId) {
                 postData.expire_date_id = expireDateId;
@@ -243,8 +246,16 @@ function WarehousePortal() {
             let token = $(this).attr("data-id");
             let expireDateId = $(this).attr("data-expire-date-id");
 
+            // Convert empty string to null for normal shops
+            if (expireDateId === "" || expireDateId === "undefined") {
+                expireDateId = null;
+            }
+
             // Send notification før vi åbner modalen
-            let buttonClickData = {token: token, expire_date_id: expireDateId};
+            let buttonClickData = {token: token};
+            if (expireDateId) {
+                buttonClickData.expire_date_id = expireDateId;
+            }
             await self.sendButtonClickNotification('files_status', buttonClickData);
 
             $("#myModal").html("");
@@ -265,8 +276,16 @@ function WarehousePortal() {
             let token = $(this).attr("data-id");
             let expireDateId = $(this).attr("data-expire-date-id");
 
+            // Convert empty string to null for normal shops
+            if (expireDateId === "" || expireDateId === "undefined") {
+                expireDateId = null;
+            }
+
             // Send notification før vi åbner info modalen
-            let buttonClickData = {token: token, expire_date_id: expireDateId};
+            let buttonClickData = {token: token};
+            if (expireDateId) {
+                buttonClickData.expire_date_id = expireDateId;
+            }
             await self.sendButtonClickNotification('info', buttonClickData);
 
             $("#myModalInfo").html("");
@@ -368,9 +387,18 @@ function WarehousePortal() {
     };
     this.setModalEvents = function(shopToken, expireDateId){
         let self = this;
+
+        // Convert empty string to null for normal shops
+        if (expireDateId === "" || expireDateId === "undefined") {
+            expireDateId = null;
+        }
+
         $(".swh-download").unbind("click").click(async function() {
             // Send notification før download
-            let buttonClickData = {token: shopToken, expire_date_id: expireDateId};
+            let buttonClickData = {token: shopToken};
+            if (expireDateId) {
+                buttonClickData.expire_date_id = expireDateId;
+            }
             await self.sendButtonClickNotification('download', buttonClickData);
 
             if($("#packaging-status").val() < 4) {
@@ -382,7 +410,10 @@ function WarehousePortal() {
         $("#update-packaging-status").unbind("click").click(async function(){
             let new_packaging_status = $("#packaging-status").val();
             let current_status = self.presentStatus;
-            let buttonClickData = {token: shopToken, expire_date_id: expireDateId};
+            let buttonClickData = {token: shopToken};
+            if (expireDateId) {
+                buttonClickData.expire_date_id = expireDateId;
+            }
             await self.sendButtonClickNotification('status_update', buttonClickData);
             // Get status text for both current and new status
             const statList = [
@@ -419,8 +450,14 @@ function WarehousePortal() {
                         }
                         alert("Status opdateret");
 
-                        // Get references to elements that need updating
-                        let row = $(`.styled-table tr[data-id="${shopToken}"]`);
+                        // Get references to elements that need updating - target specific expire_date_id for cardshops
+                        let selector = `.styled-table tr[data-id="${shopToken}"]`;
+                        if (expireDateId) {
+                            selector += `[data-expire-date-id="${expireDateId}"]`;
+                        } else {
+                            selector += `[data-expire-date-id=""]`;
+                        }
+                        let row = $(selector);
                         let button = row.find('.hent-filer');
                         let statusCell = row.find('td:nth-child(7)');
 
@@ -454,10 +491,8 @@ function WarehousePortal() {
                         // Update presentStatus to reflect the new status
                         self.presentStatus = new_packaging_status;
 
-                        // If using DataTables, redraw the table
-                        if (self.dataTable) {
-                            self.dataTable.draw(false);
-                        }
+                        // Don't redraw DataTable as it would overwrite our DOM changes
+                        // The row-specific DOM update above is sufficient
                     })
                     .fail(function() {
                         alert("alert_problem");
@@ -621,6 +656,11 @@ function WarehousePortal() {
     };
     this.readStatus = async function (token, expireDateId){
         return new Promise((resolve, reject) => {
+            // Convert empty string to null for normal shops
+            if (expireDateId === "" || expireDateId === "undefined") {
+                expireDateId = null;
+            }
+
             let postData = {token: token};
             if (expireDateId) {
                 postData.expire_date_id = expireDateId;
@@ -1084,7 +1124,6 @@ function WarehousePortal() {
             <th>Leveringsdato</th>
             <th width="80">Shop Type</th>
             <th width="100">Expire Date</th>
-            <th width="70">Expire ID</th>
             <th width="220">Handling</th>
         </tr>`;
 
@@ -1213,7 +1252,6 @@ function WarehousePortal() {
                 <td>${deleveri}</td>
                 <td><strong>${shop_type}</strong></td>
                 <td>${expire_display_date}</td>
-                <td>${expire_date_id}</td>
                 <td class="button-column" style="white-space: nowrap;">
                     <button data-id="${token}" data-expire-date-id="${expire_date_id}" class="hent-filer ${pack_status}" style="${fileButtonStyles}">
                         ${pack_status === 'released' ?
